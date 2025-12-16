@@ -8,6 +8,34 @@
 # If the health check fails, it returns exit code 1.
 # If the health check passes, it returns exit code 0.
 
+# Grace period: Allow time for services to start after keepalived starts
+# This prevents the chicken-egg problem where health checks fail before notify_master
+# can start the services when a master node comes back online.
+GRACE_PERIOD_SECONDS=40
+
+# Check if keepalived was started recently (within grace period)
+if systemctl is-active --quiet keepalived; then
+  # Get keepalived process start time in seconds since epoch
+  _keepalived_start=$(systemctl show keepalived -p ActiveEnterTimestampMonotonic --value)
+
+  if [ -n "$_keepalived_start" ] && [ "$_keepalived_start" != "0" ]; then
+    # Get current monotonic time in microseconds and convert to seconds
+    _current_time=$(cat /proc/uptime | awk '{print $1}' | cut -d'.' -f1)
+
+    # Convert keepalived start time from microseconds to seconds
+    _keepalived_start_sec=$((_keepalived_start / 1000000))
+
+    # Calculate uptime of keepalived
+    _keepalived_uptime=$((_current_time - _keepalived_start_sec))
+
+    if [ "$_keepalived_uptime" -lt "$GRACE_PERIOD_SECONDS" ]; then
+      echo "Keepalived started ${_keepalived_uptime}s ago (grace period: ${GRACE_PERIOD_SECONDS}s)"
+      echo "Skipping health checks during grace period to allow services to start."
+      exit 0
+    fi
+  fi
+fi
+
 echo "Checking health of fz-syncd ..."
 if systemctl is-active --quiet fz-syncd; then
   echo "fz-syncd is active."
