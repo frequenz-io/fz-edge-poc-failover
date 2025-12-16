@@ -9,6 +9,3 @@ echo "Starting fz-syncd ..."
 systemctl enable fz-syncd
 systemctl start fz-syncd
 
-echo "Starting nitrogen-gateway ..."
-systemctl enable nitrogen-gateway
-systemctl start nitrogen-gateway

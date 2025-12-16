@@ -15,6 +15,3 @@ _service_list=$(cat /etc/frequenz/cloud-sync/outputs/service_names.txt | tr '\n'
 systemctl disable $_service_list
 systemctl stop $_service_list
 
-echo "Stopping nitrogen-gateway ..."
-systemctl disable nitrogen-gateway
-systemctl stop nitrogen-gateway
